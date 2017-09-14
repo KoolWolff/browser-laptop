@@ -253,6 +253,7 @@ class Tab extends React.Component {
     props.partOfFullPageSet = partOfFullPageSet
     props.showAudioTopBorder = audioState.showAudioTopBorder(currentWindow, frameKey, isPinned)
     props.centralizeTabIcons = tabUIState.centralizeTabIcons(currentWindow, frameKey, isPinned)
+    props.gradientColor = tabUIState.getTabEndIconBackgroundColor(currentWindow, frameKey)
 
     // used in other functions
     props.dragData = state.getIn(['dragData', 'type']) === dragTypes.TAB && state.get('dragData')
@@ -271,6 +272,13 @@ class Tab extends React.Component {
         ':hover': {
           color: this.props.themeColor ? getTextColorForBackground(this.props.themeColor) : 'inherit',
           background: this.props.themeColor ? this.props.themeColor : 'inherit'
+        }
+      }
+    })
+    const perPageGradient = StyleSheet.create({
+      tab_gradient: {
+        '::before': {
+          background: this.props.gradientColor
         }
       }
     })
@@ -300,12 +308,13 @@ class Tab extends React.Component {
         ref={(node) => { this.tabNode = node }}
         className={css(
           styles.tab,
+          perPageGradient.tab_gradient,
           // Windows specific style
           isWindows && styles.tab_forWindows,
           this.props.isPinnedTab && styles.tab_pinned,
           this.props.isActive && styles.tab_active,
-          this.props.showAudioTopBorder && styles.tab_audioTopBorder,
           this.props.isActive && this.props.themeColor && perPageStyles.tab_themeColor,
+          this.props.showAudioTopBorder && styles.tab_audioTopBorder,
           // Private color should override themeColor
           this.props.isPrivateTab && styles.tab_private,
           this.props.isActive && this.props.isPrivateTab && styles.tab_active_private,
@@ -362,6 +371,16 @@ const styles = StyleSheet.create({
 
     ':hover': {
       background: theme.tab.hover.background
+    },
+
+    // this enable us to have gradient text
+    '::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '-webkit-fill-available',
+      height: '-webkit-fill-available'
     }
   },
 
@@ -370,24 +389,18 @@ const styles = StyleSheet.create({
     color: theme.tab.forWindows.color
   },
 
+  tab_pinned: {
+    padding: 0,
+    width: '28px',
+    justifyContent: 'center'
+  },
+
   tab_active: {
     background: theme.tab.active.background,
 
     ':hover': {
       background: theme.tab.active.background
     }
-  },
-
-  // The sentinel is responsible to respond to tabs
-  // intersection state. This is an empty hidden element
-  // which `width` value shouldn't be changed unless the intersection
-  // point needs to be edited.
-  tab__sentinel: {
-    position: 'absolute',
-    left: 0,
-    height: '1px',
-    background: 'transparent',
-    width: globalStyles.spacing.sentinelSize
   },
 
   tab_audioTopBorder: {
@@ -403,13 +416,26 @@ const styles = StyleSheet.create({
     }
   },
 
+  // The sentinel is responsible to respond to tabs
+  // intersection state. This is an empty hidden element
+  // which `width` value shouldn't be changed unless the intersection
+  // point needs to be edited.
+  tab__sentinel: {
+    position: 'absolute',
+    left: 0,
+    height: '1px',
+    background: 'transparent',
+    width: globalStyles.spacing.sentinelSize
+  },
+
   tab__identity: {
     justifyContent: 'flex-start',
     alignItems: 'center',
+    overflow: 'hidden',
     display: 'flex',
     flex: '1',
     minWidth: '0', // @see https://bugzilla.mozilla.org/show_bug.cgi?id=1108514#c5
-    marginLeft: globalStyles.spacing.defaultTabMargin
+    margin: `0 ${globalStyles.spacing.defaultTabMargin}`
   },
 
   tab__content_centered: {
@@ -417,12 +443,6 @@ const styles = StyleSheet.create({
     flex: 'auto',
     padding: 0,
     margin: 0
-  },
-
-  tab_pinned: {
-    padding: 0,
-    width: '28px',
-    justifyContent: 'center'
   },
 
   tab_active_private: {
